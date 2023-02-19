@@ -1,7 +1,12 @@
 package main
 
-import "fmt"
+import (
+	"fmt"
+
+	"github.com/GeorgianBadita/backgammon/pkg/board"
+)
 
 func main() {
-	fmt.Println("Hello World")
+	backgammonBoard := board.NewBoard(board.COLOR_WHITE)
+	fmt.Println(backgammonBoard)
 }
