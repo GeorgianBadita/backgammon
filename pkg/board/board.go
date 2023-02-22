@@ -10,13 +10,6 @@ type DieRoll struct {
 	Die2 int
 }
 
-type Move struct {
-	From PointIndex
-	To   PointIndex
-}
-
-type MoveRoll []Move
-
 type Checker struct {
 	Color
 }
@@ -98,6 +91,15 @@ func NewBoard(color Color) Board {
 	return Board{points, color}
 }
 
+// Function to copy a board
+func (b Board) CopyBoard() Board {
+	initPoints := make([]Point, len(b.Points))
+	copy(initPoints, b.Points)
+	newBoard := NewBoard(b.ColorToMove)
+	newBoard.Points = initPoints
+	return newBoard
+}
+
 // Function computing the current board game state
 // State for the current player can be:
 //   - CHECKERS_ON_BAR - if the current plauyer has any checker on bar
@@ -130,6 +132,10 @@ func (b Board) ComputeGameState() GameState {
 	return NORMAL_PLAY
 }
 
+func (b Board) GetValidMovesForDie(d DieRoll) []MoveRoll {
+	return getPossibleMoves(b, d)
+}
+
 // Function that prints a pretty string of the current board
 func (b Board) String() string {
 	const GREEN_COLOR = string("\033[32m")
@@ -143,8 +149,8 @@ func (b Board) String() string {
 			boardString += "  "
 		}
 	}
-	boardString += "  " + RED_COLOR + strconv.Itoa(b.Points[BLACK_PIECES_BAR_POINT_INDEX].CheckerCount)
-	boardString += "\n\n\n\n\n\n\n"
+	boardString += " " + RED_COLOR + strconv.Itoa(b.Points[BLACK_PIECES_BAR_POINT_INDEX].CheckerCount)
+	boardString += "\n\n\n\n\n"
 
 	for idx := 11; idx >= 0; idx-- {
 		boardString += pointColor(b.Points[idx], idx)
@@ -152,7 +158,7 @@ func (b Board) String() string {
 			boardString += "  "
 		}
 	}
-	boardString += "  " + BLUE_COLOR + strconv.Itoa(b.Points[WHITE_PIECES_BAR_POINT_INDEX].CheckerCount)
+	boardString += " " + BLUE_COLOR + strconv.Itoa(b.Points[WHITE_PIECES_BAR_POINT_INDEX].CheckerCount)
 	boardString += "\n"
 	return fmt.Sprint(boardString)
 }
@@ -167,15 +173,15 @@ func pointColor(p Point, idx int) string {
 	par := strconv.Itoa(p.CheckerCount)
 	if p.IsEmpty() {
 		if idx%2 == 0 {
-			boardString += YELLOW_COLOR + "- "
+			boardString += YELLOW_COLOR + "-"
 		} else {
-			boardString += PURPLE_COLOR + "- "
+			boardString += PURPLE_COLOR + "-"
 		}
 	} else {
 		if p.Checker.Color == COLOR_BLACK {
-			boardString += RED_COLOR + par + " "
+			boardString += RED_COLOR + par
 		} else {
-			boardString += BLUE_COLOR + par + " "
+			boardString += BLUE_COLOR + par
 		}
 	}
 	return boardString
@@ -205,6 +211,102 @@ func numCheckersInHome(b Board, color Color) int {
 	return s
 }
 
-func getPossbileNormalMoves(b Board, d DieRoll) {
+func getPossibleMoves(b Board, d DieRoll) []MoveRoll {
+	d1Moves := getMovesWithOneDie(b, d.Die1)
+	moveRolls := []MoveRoll{}
+	if d.Die1 != d.Die2 {
+		if d.Die1 < d.Die2 {
+			// Make sure we first make moves with the bigger die
+			d.Die1, d.Die2 = d.Die2, d.Die1
+		}
 
+		for idx := 0; idx < len(d1Moves); idx++ {
+			currMove := d1Moves[idx]
+			d2Moves := getMovesWithOneDie(currMove.MakeMove(b), d.Die2)
+			for jdx := 0; jdx < len(d2Moves); jdx++ {
+				moveRolls = append(moveRolls, MoveRoll{currMove, d2Moves[jdx]})
+			}
+
+		}
+		// If thereare no possible moves with 2 die, take only possible moves with 1 dice
+		if len(moveRolls) == 0 {
+			for idx := 0; idx < len(d1Moves); idx++ {
+				moveRolls = append(moveRolls, MoveRoll{d1Moves[idx]})
+			}
+		}
+	} else {
+		for idx := 0; idx < len(d1Moves); idx++ {
+			currd1Move := d1Moves[idx]
+			move1Board := currd1Move.MakeMove(b)
+			d2Moves := getMovesWithOneDie(move1Board, d.Die1)
+			for jdx := 0; jdx < len(d2Moves); jdx++ {
+				currd2Move := d2Moves[jdx]
+				move2Board := currd2Move.MakeMove(move1Board)
+				d3Moves := getMovesWithOneDie(move2Board, d.Die1)
+				for tdx := 0; tdx < len(d3Moves); tdx++ {
+					currd3Move := d3Moves[tdx]
+					move3Board := currd3Move.MakeMove(move2Board)
+					d4Moves := getMovesWithOneDie(move3Board, d.Die1)
+					for zdx := 0; zdx < len(d4Moves); zdx++ {
+						moveRolls = append(moveRolls, MoveRoll{currd1Move, currd2Move, currd3Move, d4Moves[zdx]})
+					}
+				}
+				// If there are no moves with 4 die, trey with 3 die
+				if len(moveRolls) == 0 {
+					for tdx := 0; tdx < len(d3Moves); tdx++ {
+						moveRolls = append(moveRolls, MoveRoll{currd1Move, currd2Move, d3Moves[tdx]})
+					}
+				}
+			}
+			// If there are no moves with 3 die, try with 2 die
+			if len(moveRolls) == 0 {
+				for jdx := 0; jdx < len(d2Moves); jdx++ {
+					moveRolls = append(moveRolls, MoveRoll{currd1Move, d2Moves[jdx]})
+				}
+			}
+		}
+		// If thereare no possible moves with 2 die, take only possible moves with 1 dice
+		if len(moveRolls) == 0 {
+			for idx := 0; idx < len(d1Moves); idx++ {
+				moveRolls = append(moveRolls, MoveRoll{d1Moves[idx]})
+			}
+		}
+	}
+	return moveRolls
+}
+
+func getMovesWithOneDie(b Board, dValue int) []Move {
+	direction := 1
+	if b.ColorToMove == COLOR_WHITE {
+		direction = -1
+	}
+
+	moves := []Move{}
+
+	for idx := 0; idx < NUM_PLAYABLE_POINTS; idx++ {
+		if b.ColorToMove == b.Points[idx].Checker.Color && b.Points[idx].CheckerCount > 0 {
+			destPointIndex := PointIndex(idx + direction*dValue)
+			if isValidDestinationForChecker(b, destPointIndex) {
+				moves = append(moves, Move{PointIndex(idx), destPointIndex, NORMAL_MOVE})
+			}
+		}
+	}
+	return moves
+}
+
+// Function that checks if a destination for a checker is correct
+// It verifies:
+// 1. If the position is within the 24 points board
+// 2. If the destination contains more than 1 checkers of the opposition color
+func isValidDestinationForChecker(b Board, destinationPoint PointIndex) bool {
+	isCoordLegal := destinationPoint >= 0 && destinationPoint < NUM_PLAYABLE_POINTS
+	if !isCoordLegal {
+		return false
+	}
+
+	checkersAtDest := b.Points[destinationPoint]
+	if checkersAtDest.Checker.Color != b.ColorToMove && checkersAtDest.CheckerCount > 1 {
+		return false
+	}
+	return true
 }

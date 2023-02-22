@@ -14,8 +14,35 @@ type Move struct {
 	Type MoveType
 }
 
-func (m Move) makeMove(b Board) Board {
-	return b
+func (m Move) MakeMove(b Board) Board {
+	boardForMove := b.CopyBoard()
+	if m.Type == NORMAL_MOVE {
+		checker := boardForMove.Points[m.From].Checker
+		boardForMove.Points[m.From].CheckerCount -= 1
+		// If the move leads to barring opponent's checkers
+		if boardForMove.Points[m.To].CheckerCount == 1 && boardForMove.Points[m.To].Checker.Color != b.ColorToMove {
+			// Increase checkers on bar index for color
+			if boardForMove.Points[m.To].Checker.Color == COLOR_BLACK {
+				boardForMove.Points[BLACK_PIECES_BAR_POINT_INDEX].CheckerCount += 1
+			} else {
+				boardForMove.Points[WHITE_PIECES_BAR_POINT_INDEX].CheckerCount += 1
+			}
+			boardForMove.Points[m.To].CheckerCount = 1
+			boardForMove.Points[m.To].Checker = checker
+		} else {
+			boardForMove.Points[m.To].CheckerCount += 1
+			boardForMove.Points[m.To].Checker = checker
+		}
+	}
+	return boardForMove
 }
 
 type MoveRoll []Move
+
+func (mvRoll MoveRoll) MakeMoveRoll(b Board) Board {
+	boardForRoll := b.CopyBoard()
+	for idx := 0; idx < len(mvRoll); idx++ {
+		boardForRoll = mvRoll[idx].MakeMove(boardForRoll)
+	}
+	return boardForRoll
+}
