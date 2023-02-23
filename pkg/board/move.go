@@ -16,7 +16,7 @@ type Move struct {
 
 func (m Move) MakeMove(b Board) Board {
 	boardForMove := b.CopyBoard()
-	if m.Type == NORMAL_MOVE {
+	if m.Type == NORMAL_MOVE || m.Type == CHECKER_ON_BAR_MOVE {
 		checker := boardForMove.Points[m.From].Checker
 		boardForMove.Points[m.From].CheckerCount -= 1
 		// If the move leads to barring opponent's checkers

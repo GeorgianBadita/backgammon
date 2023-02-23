@@ -2,11 +2,20 @@ package main
 
 import (
 	"fmt"
+	"log"
+	"os"
+	"runtime/pprof"
 
 	"github.com/GeorgianBadita/backgammon/pkg/board"
 )
 
 func main() {
+	f, err := os.Create("backgammon.prof")
+	if err != nil {
+		log.Fatal(err)
+	}
+	pprof.StartCPUProfile(f)
+	defer pprof.StopCPUProfile()
 	backgammonBoard := board.NewBoard(board.COLOR_WHITE)
 	fmt.Println(backgammonBoard)
 	moveRolls := backgammonBoard.GetValidMovesForDie(board.DieRoll{Die1: 6, Die2: 6})

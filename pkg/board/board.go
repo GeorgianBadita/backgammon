@@ -118,14 +118,15 @@ func (b Board) ComputeGameState() GameState {
 
 	// If any player has no checker on the board, then it's game over
 	//TODO: consider making this a bool
-	currPlayerHomePieces := numCheckersOfColor(b, currentPlayerColor)
-	otherPlayerHomePieces := numCheckersOfColor(b, Color(1-currentPlayerColor))
+	currPlayerCheckerCount := numCheckersOfColor(b, currentPlayerColor)
+	otherPlayerCheckerCount := numCheckersOfColor(b, Color(1-currentPlayerColor))
 
-	if currPlayerHomePieces == 0 || otherPlayerHomePieces == 0 {
+	if currPlayerCheckerCount == 0 || otherPlayerCheckerCount == 0 {
 		return GAME_OVER
 	}
 
-	if numCheckersInHome(b, currentPlayerColor) <= 15 {
+	// If all checkers are in home
+	if currPlayerCheckerCount == numCheckersInHome(b, currentPlayerColor) {
 		return BEARING_OFF
 	}
 
@@ -265,7 +266,7 @@ func getPossibleMoves(b Board, d DieRoll) []MoveRoll {
 				}
 			}
 		}
-		// If thereare no possible moves with 2 die, take only possible moves with 1 dice
+		// If there are no possible moves with 2 die, take only possible moves with 1 dice
 		if len(moveRolls) == 0 {
 			for idx := 0; idx < len(d1Moves); idx++ {
 				moveRolls = append(moveRolls, MoveRoll{d1Moves[idx]})
@@ -276,12 +277,27 @@ func getPossibleMoves(b Board, d DieRoll) []MoveRoll {
 }
 
 func getMovesWithOneDie(b Board, dValue int) []Move {
+	res := []Move{}
+	fmt.Print(b.ComputeGameState())
+	switch b.ComputeGameState() {
+	case NORMAL_PLAY:
+		res = getMovesForNormalGameState(b, dValue)
+	case CHECKERS_ON_BAR:
+		res = getMovesForCheckersOnBarState(b, dValue)
+	case BEARING_OFF:
+		res = getMovesForBearingOffState(b, dValue)
+	}
+	return res
+}
+
+// Get all the moves for one die on a normal game state
+// Assumes the function is only called if the board state is NORMAL_PLAY
+func getMovesForNormalGameState(b Board, dValue int) []Move {
+	moves := []Move{}
 	direction := 1
 	if b.ColorToMove == COLOR_WHITE {
 		direction = -1
 	}
-
-	moves := []Move{}
 
 	for idx := 0; idx < NUM_PLAYABLE_POINTS; idx++ {
 		if b.ColorToMove == b.Points[idx].Checker.Color && b.Points[idx].CheckerCount > 0 {
@@ -292,6 +308,36 @@ func getMovesWithOneDie(b Board, dValue int) []Move {
 		}
 	}
 	return moves
+}
+
+// Get all the moves for one die on a checker on bar state
+// Assumes the function is only called if the board state CHECKERS_ON_BAR
+func getMovesForCheckersOnBarState(b Board, dValue int) []Move {
+	moves := []Move{}
+	if b.ColorToMove == COLOR_WHITE {
+		for idx := 18; idx < NUM_PLAYABLE_POINTS; idx++ {
+			pointsAtIdx := b.Points[idx]
+			if pointsAtIdx.Checker.Color == b.ColorToMove ||
+				pointsAtIdx.CheckerCount < 2 {
+				moves = append(moves, Move{WHITE_PIECES_BAR_POINT_INDEX, PointIndex(idx), CHECKER_ON_BAR_MOVE})
+			}
+		}
+	} else {
+		for idx := 0; idx < 6; idx++ {
+			pointsAtIdx := b.Points[idx]
+			if pointsAtIdx.Checker.Color == b.ColorToMove ||
+				pointsAtIdx.CheckerCount < 2 {
+				moves = append(moves, Move{BLACK_PIECES_BAR_POINT_INDEX, PointIndex(idx), CHECKER_ON_BAR_MOVE})
+			}
+		}
+	}
+	return moves
+}
+
+// Get all the moves for one die on a bearing off state
+// Assumes the function is only called if the board state BEARING_OFF
+func getMovesForBearingOffState(b Board, dValue int) []Move {
+	return []Move{}
 }
 
 // Function that checks if a destination for a checker is correct
