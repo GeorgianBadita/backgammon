@@ -134,7 +134,13 @@ func (b Board) ComputeGameState() GameState {
 }
 
 func (b Board) GetValidMovesForDie(d DieRoll) []MoveRoll {
-	return getPossibleMoves(b, d)
+	if d.Die1 < d.Die2 {
+		moveRolls := getPossibleMoves(b, DieRoll{d.Die2, d.Die1})
+		if len(moveRolls) > 0 {
+			return moveRolls
+		}
+	}
+	return getPossibleMoves(b, DieRoll{d.Die1, d.Die2})
 }
 
 // Function that prints a pretty string of the current board
@@ -186,6 +192,22 @@ func pointColor(p Point, idx int) string {
 		}
 	}
 	return boardString
+}
+
+func (b Board) IsEqual(ot Board) bool {
+	if b.ColorToMove != ot.ColorToMove {
+		return false
+	}
+
+	for idx := 0; idx < WHITE_PIECES_BAR_POINT_INDEX; idx++ {
+		if b.Points[idx].CheckerCount != ot.Points[idx].CheckerCount {
+			return false
+		}
+		if b.Points[idx].CheckerCount > 0 && b.Points[idx].Checker.Color != ot.Points[idx].Checker.Color {
+			return false
+		}
+	}
+	return true
 }
 
 func numCheckersOfColor(b Board, color Color) int {
@@ -337,7 +359,70 @@ func getMovesForCheckersOnBarState(b Board, dValue int) []Move {
 // Get all the moves for one die on a bearing off state
 // Assumes the function is only called if the board state BEARING_OFF
 func getMovesForBearingOffState(b Board, dValue int) []Move {
-	return []Move{}
+	movesMap := map[Move]bool{}
+	moves := []Move{}
+	// First go for normal moves that can be done during bear off
+	if b.ColorToMove == COLOR_WHITE {
+		for idx := 0; idx < 6; idx++ {
+			if b.ColorToMove == b.Points[idx].Checker.Color && b.Points[idx].CheckerCount > 0 {
+				destPointIndex := PointIndex(idx - dValue)
+				if isValidDestinationForChecker(b, destPointIndex) {
+					movesMap[Move{PointIndex(idx), destPointIndex, NORMAL_MOVE}] = true
+				}
+			}
+		}
+	} else {
+		for idx := 18; idx < NUM_PLAYABLE_POINTS; idx++ {
+			if b.ColorToMove == b.Points[idx].Checker.Color && b.Points[idx].CheckerCount > 0 {
+				destPointIndex := PointIndex(idx + dValue)
+				if isValidDestinationForChecker(b, destPointIndex) {
+					movesMap[Move{PointIndex(idx), destPointIndex, NORMAL_MOVE}] = true
+				}
+			}
+		}
+	}
+
+	// Go for removal moves in bearing off when die value is greater than first index with
+	// checker of the same color as the
+	if b.ColorToMove == COLOR_WHITE {
+		indexOfLastChecker := 5
+		for idx := 5; idx >= 0; idx-- {
+			if b.Points[idx].CheckerCount > 0 && b.Points[idx].Checker.Color == b.ColorToMove {
+				indexOfLastChecker = idx
+				break
+			}
+		}
+		if dValue >= indexOfLastChecker+1 {
+			movesMap[Move{PointIndex(indexOfLastChecker), -1, BEARING_OFF_MOVE}] = true
+		}
+		// Base case when player has checkers on the die position
+		// This can lead to duplicate moves, thus using a map
+		if b.Points[dValue-1].CheckerCount > 0 && b.Points[dValue-1].Checker.Color == b.ColorToMove {
+			movesMap[Move{PointIndex(dValue - 1), -1, BEARING_OFF_MOVE}] = true
+		}
+	} else {
+		indexOfLastChecker := 18
+		for idx := 18; idx < NUM_PLAYABLE_POINTS; idx-- {
+			if b.Points[idx].CheckerCount > 0 && b.Points[idx].Checker.Color == b.ColorToMove {
+				indexOfLastChecker = idx
+				break
+			}
+		}
+		if dValue >= NUM_PLAYABLE_POINTS-indexOfLastChecker {
+			movesMap[Move{PointIndex(indexOfLastChecker), -1, BEARING_OFF_MOVE}] = true
+		}
+
+		// Base case when player has checkers on the die position
+		// This can lead to duplicate moves, thus using a map
+		if b.Points[NUM_PLAYABLE_POINTS-dValue].CheckerCount > 0 && b.Points[NUM_PLAYABLE_POINTS-dValue].Checker.Color == b.ColorToMove {
+			movesMap[Move{PointIndex(NUM_PLAYABLE_POINTS - dValue), -1, BEARING_OFF_MOVE}] = true
+		}
+	}
+
+	for move := range movesMap {
+		moves = append(moves, move)
+	}
+	return moves
 }
 
 // Function that checks if a destination for a checker is correct

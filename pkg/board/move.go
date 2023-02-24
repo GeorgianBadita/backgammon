@@ -33,6 +33,8 @@ func (m Move) MakeMove(b Board) Board {
 			boardForMove.Points[m.To].CheckerCount += 1
 			boardForMove.Points[m.To].Checker = checker
 		}
+	} else if m.Type == BEARING_OFF_MOVE {
+		boardForMove.Points[m.From].CheckerCount -= 1
 	}
 	return boardForMove
 }
