@@ -133,6 +133,10 @@ func makeCheckerOnBarMoveTests() []moveTest {
 		Move{From: 23, To: 17, Type: NORMAL_MOVE},
 	}
 	endBoard := startBoard.CopyBoard()
+	endBoard.Points[BLACK_PIECES_BAR_POINT_INDEX].CheckerCount += 1
+	endBoard.Points[17].CheckerCount = 1
+	endBoard.Points[17].Checker = endBoard.Points[23].Checker
+	endBoard.Points[23].CheckerCount -= 1
 
 	normalMovesTests = append(normalMovesTests, moveTest{
 		startBoard,

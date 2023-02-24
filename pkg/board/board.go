@@ -224,11 +224,15 @@ func numCheckersInHome(b Board, color Color) int {
 	s := 0
 	if color == COLOR_WHITE {
 		for idx := 0; idx < 6; idx++ {
-			s += b.Points[idx].CheckerCount
+			if b.Points[idx].Checker.Color == COLOR_WHITE {
+				s += b.Points[idx].CheckerCount
+			}
 		}
 	} else {
 		for idx := 18; idx < NUM_PLAYABLE_POINTS; idx++ {
-			s += b.Points[idx].CheckerCount
+			if b.Points[idx].Checker.Color == COLOR_BLACK {
+				s += b.Points[idx].CheckerCount
+			}
 		}
 	}
 	return s
