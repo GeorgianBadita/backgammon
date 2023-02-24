@@ -37,9 +37,18 @@ func makeGameStateTests() []gameStateTest {
 	board2.Points[23].CheckerCount = 0
 	expectedGameState2 := BEARING_OFF
 
+	// test 4 - black doesn't have any piece left
+	board3 := NewBoard(COLOR_BLACK)
+	board3.Points[18].CheckerCount = 0
+	board3.Points[16].CheckerCount = 0
+	board3.Points[11].CheckerCount = 0
+	board3.Points[0].CheckerCount = 0
+	expectedGameState3 := GAME_OVER
+
 	return []gameStateTest{
 		{board, expectedGameState},
 		{board1, expectedGameState1},
 		{board2, expectedGameState2},
+		{board3, expectedGameState3},
 	}
 }

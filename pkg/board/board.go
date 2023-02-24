@@ -212,10 +212,15 @@ func (b Board) IsEqual(ot Board) bool {
 
 func numCheckersOfColor(b Board, color Color) int {
 	s := 0
-	for idx := 0; idx < 24; idx++ {
+	for idx := 0; idx < NUM_PLAYABLE_POINTS; idx++ {
 		if b.Points[idx].Checker.Color == color {
 			s += b.Points[idx].CheckerCount
 		}
+	}
+	if color == COLOR_WHITE {
+		s += b.Points[WHITE_PIECES_BAR_POINT_INDEX].CheckerCount
+	} else {
+		s += b.Points[BLACK_PIECES_BAR_POINT_INDEX].CheckerCount
 	}
 	return s
 }
