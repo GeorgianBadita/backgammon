@@ -3,6 +3,8 @@ package board
 import (
 	"fmt"
 	"strconv"
+
+	"github.com/mitchellh/hashstructure/v2"
 )
 
 type DieRoll struct {
@@ -22,10 +24,6 @@ type Point struct {
 	CheckerCount int
 	PointIndex   PointIndex
 	Checker      Checker
-}
-
-func (p Point) IsEmpty() bool {
-	return p.CheckerCount == 0
 }
 
 func NewPoint(count int, index PointIndex, checker Checker) Point {
@@ -91,6 +89,15 @@ func NewBoard(color Color) Board {
 	return Board{points, color}
 }
 
+// Function to hash a board
+func (b Board) Hash() uint64 {
+	hash, err := hashstructure.Hash(b, hashstructure.FormatV2, nil)
+	if err != nil {
+		panic(err)
+	}
+	return hash
+}
+
 // Function to copy a board
 func (b Board) CopyBoard() Board {
 	initPoints := make([]Point, len(b.Points))
@@ -134,19 +141,7 @@ func (b Board) ComputeGameState() GameState {
 }
 
 func (b Board) GetValidMovesForDie(d DieRoll) []MoveRoll {
-	if d.Die1 < d.Die2 {
-		d.Die1, d.Die2 = d.Die2, d.Die1
-	}
-	// In bearing off, we need to check the smaller dice roll first
-	// to make sure we capture all cases
-	if b.ComputeGameState() == BEARING_OFF {
-		d.Die1, d.Die2 = d.Die2, d.Die1
-	}
-	moveRolls := getPossibleMoves(b, d)
-	if len(moveRolls) > 0 {
-		return moveRolls
-	}
-	return getPossibleMoves(b, DieRoll{d.Die2, d.Die1})
+	return getPossibleMoves(b, d)
 }
 
 // Function that prints a pretty string of the current board
@@ -184,7 +179,7 @@ func pointColor(p Point, idx int) string {
 
 	boardString := ""
 	par := strconv.Itoa(p.CheckerCount)
-	if p.IsEmpty() {
+	if p.CheckerCount == 0 {
 		if idx%2 == 0 {
 			boardString += YELLOW_COLOR + "-"
 		} else {
@@ -201,19 +196,7 @@ func pointColor(p Point, idx int) string {
 }
 
 func (b Board) IsEqual(ot Board) bool {
-	if b.ColorToMove != ot.ColorToMove {
-		return false
-	}
-
-	for idx := 0; idx < WHITE_PIECES_BAR_POINT_INDEX; idx++ {
-		if b.Points[idx].CheckerCount != ot.Points[idx].CheckerCount {
-			return false
-		}
-		if b.Points[idx].CheckerCount > 0 && b.Points[idx].Checker.Color != ot.Points[idx].Checker.Color {
-			return false
-		}
-	}
-	return true
+	return b.Hash() == ot.Hash()
 }
 
 func numCheckersOfColor(b Board, color Color) int {
@@ -250,23 +233,71 @@ func numCheckersInHome(b Board, color Color) int {
 }
 
 func getPossibleMoves(b Board, d DieRoll) []MoveRoll {
-	d1Moves := getMovesWithOneDie(b, d.Die1)
 	moveRolls := []MoveRoll{}
+	seenBoards := map[uint64]bool{}
+
 	if d.Die1 != d.Die2 {
+		// Try the bigger die first
+		if d.Die1 < d.Die2 {
+			d.Die1, d.Die2 = d.Die2, d.Die1
+		}
+
+		d1Moves := getMovesWithOneDie(b, d.Die1)
 		for idx := 0; idx < len(d1Moves); idx++ {
 			currMove := d1Moves[idx]
-			d2Moves := getMovesWithOneDie(currMove.MakeMove(b), d.Die2)
+			mv1Board := currMove.MakeMove(b)
+			d2Moves := getMovesWithOneDie(mv1Board, d.Die2)
 			for jdx := 0; jdx < len(d2Moves); jdx++ {
-				moveRolls = append(moveRolls, MoveRoll{currMove, d2Moves[jdx]})
+				mvRollToAdd := MoveRoll{currMove, d2Moves[jdx]}
+				mv2Board := d2Moves[jdx].MakeMove(mv1Board)
+				mv2BoardHash := mv2Board.Hash()
+				if _, ok := seenBoards[mv2BoardHash]; !ok {
+					moveRolls = append(moveRolls, mvRollToAdd)
+					seenBoards[mv2BoardHash] = true
+				}
 			}
 		}
+
+		d1MovesRev := getMovesWithOneDie(b, d.Die2)
+		for idx := 0; idx < len(d1MovesRev); idx++ {
+			currMove := d1MovesRev[idx]
+			mv1Board := currMove.MakeMove(b)
+			d2MovesRev := getMovesWithOneDie(mv1Board, d.Die1)
+			for jdx := 0; jdx < len(d2MovesRev); jdx++ {
+				mvRollToAdd := MoveRoll{currMove, d2MovesRev[jdx]}
+				mv2Board := d2MovesRev[jdx].MakeMove(mv1Board)
+				mv2BoardHash := mv2Board.Hash()
+				if _, ok := seenBoards[mv2BoardHash]; !ok {
+					moveRolls = append(moveRolls, mvRollToAdd)
+					seenBoards[mv2BoardHash] = true
+				}
+			}
+		}
+
 		// If thereare no possible moves with 2 die, take only possible moves with 1 dice
 		if len(moveRolls) == 0 {
 			for idx := 0; idx < len(d1Moves); idx++ {
-				moveRolls = append(moveRolls, MoveRoll{d1Moves[idx]})
+				currMove := d1Moves[idx]
+				boardHash := currMove.MakeMove(b).Hash()
+				if _, ok := seenBoards[boardHash]; !ok {
+					moveRolls = append(moveRolls, MoveRoll{currMove})
+					seenBoards[boardHash] = true
+				}
+			}
+		}
+
+		if len(moveRolls) == 0 {
+			for idx := 0; idx < len(d1MovesRev); idx++ {
+				currMove := d1MovesRev[idx]
+				boardHash := currMove.MakeMove(b).Hash()
+				if _, ok := seenBoards[boardHash]; !ok {
+					moveRolls = append(moveRolls, MoveRoll{currMove})
+					seenBoards[boardHash] = true
+				}
 			}
 		}
 	} else {
+		d1Moves := getMovesWithOneDie(b, d.Die1)
 		for idx := 0; idx < len(d1Moves); idx++ {
 			currd1Move := d1Moves[idx]
 			move1Board := currd1Move.MakeMove(b)
@@ -280,27 +311,47 @@ func getPossibleMoves(b Board, d DieRoll) []MoveRoll {
 					move3Board := currd3Move.MakeMove(move2Board)
 					d4Moves := getMovesWithOneDie(move3Board, d.Die1)
 					for zdx := 0; zdx < len(d4Moves); zdx++ {
-						moveRolls = append(moveRolls, MoveRoll{currd1Move, currd2Move, currd3Move, d4Moves[zdx]})
+						moveRollToAdd := MoveRoll{currd1Move, currd2Move, currd3Move, d4Moves[zdx]}
+						finalMoveBaordHash := d4Moves[zdx].MakeMove(move3Board).Hash()
+						if _, ok := seenBoards[finalMoveBaordHash]; !ok {
+							moveRolls = append(moveRolls, moveRollToAdd)
+							seenBoards[finalMoveBaordHash] = true
+						}
 					}
 				}
 				// If there are no moves with 4 die, trey with 3 die
 				if len(moveRolls) == 0 {
 					for tdx := 0; tdx < len(d3Moves); tdx++ {
-						moveRolls = append(moveRolls, MoveRoll{currd1Move, currd2Move, d3Moves[tdx]})
+						moveRollToAdd := MoveRoll{currd1Move, currd2Move, d3Moves[tdx]}
+						finalMoveBaordHash := d3Moves[tdx].MakeMove(move2Board).Hash()
+						if _, ok := seenBoards[finalMoveBaordHash]; !ok {
+							moveRolls = append(moveRolls, moveRollToAdd)
+							seenBoards[finalMoveBaordHash] = true
+						}
 					}
 				}
 			}
 			// If there are no moves with 3 die, try with 2 die
 			if len(moveRolls) == 0 {
 				for jdx := 0; jdx < len(d2Moves); jdx++ {
-					moveRolls = append(moveRolls, MoveRoll{currd1Move, d2Moves[jdx]})
+					moveRollToAdd := MoveRoll{currd1Move, d2Moves[jdx]}
+					finalMoveBaordHash := d2Moves[jdx].MakeMove(move1Board).Hash()
+					if _, ok := seenBoards[finalMoveBaordHash]; !ok {
+						moveRolls = append(moveRolls, moveRollToAdd)
+						seenBoards[finalMoveBaordHash] = true
+					}
 				}
 			}
 		}
 		// If there are no possible moves with 2 die, take only possible moves with 1 dice
 		if len(moveRolls) == 0 {
 			for idx := 0; idx < len(d1Moves); idx++ {
-				moveRolls = append(moveRolls, MoveRoll{d1Moves[idx]})
+				moveRollToAdd := MoveRoll{d1Moves[idx]}
+				finalMoveBaordHash := d1Moves[idx].MakeMove(b).Hash()
+				if _, ok := seenBoards[finalMoveBaordHash]; !ok {
+					moveRolls = append(moveRolls, moveRollToAdd)
+					seenBoards[finalMoveBaordHash] = true
+				}
 			}
 		}
 	}
@@ -343,25 +394,21 @@ func getMovesForNormalGameState(b Board, dValue int) []Move {
 // Get all the moves for one die on a checker on bar state
 // Assumes the function is only called if the board state CHECKERS_ON_BAR
 func getMovesForCheckersOnBarState(b Board, dValue int) []Move {
-	moves := []Move{}
 	if b.ColorToMove == COLOR_WHITE {
-		for idx := 18; idx < NUM_PLAYABLE_POINTS; idx++ {
-			pointsAtIdx := b.Points[idx]
-			if pointsAtIdx.Checker.Color == b.ColorToMove ||
-				pointsAtIdx.CheckerCount < 2 {
-				moves = append(moves, Move{WHITE_PIECES_BAR_POINT_INDEX, PointIndex(idx), CHECKER_ON_BAR_MOVE})
-			}
+		pointsAtIdx := b.Points[NUM_PLAYABLE_POINTS-dValue]
+		if pointsAtIdx.Checker.Color == b.ColorToMove ||
+			pointsAtIdx.CheckerCount < 2 {
+			return []Move{{WHITE_PIECES_BAR_POINT_INDEX, PointIndex(NUM_PLAYABLE_POINTS - dValue), CHECKER_ON_BAR_MOVE}}
 		}
+
 	} else {
-		for idx := 0; idx < 6; idx++ {
-			pointsAtIdx := b.Points[idx]
-			if pointsAtIdx.Checker.Color == b.ColorToMove ||
-				pointsAtIdx.CheckerCount < 2 {
-				moves = append(moves, Move{BLACK_PIECES_BAR_POINT_INDEX, PointIndex(idx), CHECKER_ON_BAR_MOVE})
-			}
+		pointsAtIdx := b.Points[dValue-1]
+		if pointsAtIdx.Checker.Color == b.ColorToMove ||
+			pointsAtIdx.CheckerCount < 2 {
+			return []Move{{BLACK_PIECES_BAR_POINT_INDEX, PointIndex(dValue - 1), CHECKER_ON_BAR_MOVE}}
 		}
 	}
-	return moves
+	return []Move{}
 }
 
 // Get all the moves for one die on a bearing off state

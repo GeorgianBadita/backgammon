@@ -136,7 +136,7 @@ func makeGetValidMovesFroMDieTests() []validMovesFromDieTest {
 		{Move{From: 1, To: 0, Type: NORMAL_MOVE}, Move{From: 0, To: TO_INDEX_FOR_BEARING_OFF, Type: BEARING_OFF_MOVE}},
 	}
 
-	// test 5 - test bearing off at the end of the game, with normal moves possible
+	// test 6 - test bearing off at the end of the game, with normal moves possible
 	// - from black's perspective
 	// - die roll is 1-3
 	board5 := NewBoard(COLOR_BLACK)
@@ -156,7 +156,7 @@ func makeGetValidMovesFroMDieTests() []validMovesFromDieTest {
 		{Move{From: 22, To: 23, Type: NORMAL_MOVE}, Move{From: 23, To: TO_INDEX_FOR_BEARING_OFF, Type: BEARING_OFF_MOVE}},
 	}
 
-	// test 6 - test checkers on move bar
+	// test 7 - test checkers on move bar
 	// - from white's perspective
 	// - die roll is 3-4
 	board6 := NewBoard(COLOR_WHITE)
@@ -172,22 +172,119 @@ func makeGetValidMovesFroMDieTests() []validMovesFromDieTest {
 	board6.Points[11].CheckerCount -= 1
 
 	dieRoll6 := DieRoll{3, 4}
-	expectedMoveRolls6 := board6.GetValidMovesForDie(dieRoll6)
-	// TODO: there is a clear bug here
-	// expectedMoveRolls6 := []MoveRoll{
-	// 	{Move{From: WHITE_PIECES_BAR_POINT_INDEX, To: 20, Type: CHECKER_ON_BAR_MOVE}, Move{From: 5, To: 2, Type: NORMAL_MOVE}},
-	// 	{Move{From: WHITE_PIECES_BAR_POINT_INDEX, To: 20, Type: CHECKER_ON_BAR_MOVE}, Move{From: 7, To: 4, Type: NORMAL_MOVE}},
-	// 	{Move{From: WHITE_PIECES_BAR_POINT_INDEX, To: 20, Type: CHECKER_ON_BAR_MOVE}, Move{From: 12, To: 9, Type: NORMAL_MOVE}},
-	// 	{Move{From: WHITE_PIECES_BAR_POINT_INDEX, To: 20, Type: CHECKER_ON_BAR_MOVE}, Move{From: 20, To: 17, Type: NORMAL_MOVE}},
-	// 	{Move{From: WHITE_PIECES_BAR_POINT_INDEX, To: 20, Type: CHECKER_ON_BAR_MOVE}, Move{From: 23, To: 20, Type: NORMAL_MOVE}},
-	// 	// {Move{From: WHITE_PIECES_BAR_POINT_INDEX, To: 20, Type: CHECKER_ON_BAR_MOVE}, Move{From: 23, To: 20, Type: NORMAL_MOVE}},
-	// }
-
-	for _, mv := range expectedMoveRolls6 {
-		fmt.Println(mv.MakeMoveRoll(board6))
+	expectedMoveRolls6 := []MoveRoll{
+		{Move{From: WHITE_PIECES_BAR_POINT_INDEX, To: 20, Type: CHECKER_ON_BAR_MOVE}, Move{From: 5, To: 2, Type: NORMAL_MOVE}},
+		{Move{From: WHITE_PIECES_BAR_POINT_INDEX, To: 20, Type: CHECKER_ON_BAR_MOVE}, Move{From: 7, To: 4, Type: NORMAL_MOVE}},
+		{Move{From: WHITE_PIECES_BAR_POINT_INDEX, To: 20, Type: CHECKER_ON_BAR_MOVE}, Move{From: 12, To: 9, Type: NORMAL_MOVE}},
+		{Move{From: WHITE_PIECES_BAR_POINT_INDEX, To: 20, Type: CHECKER_ON_BAR_MOVE}, Move{From: 20, To: 17, Type: NORMAL_MOVE}},
+		{Move{From: WHITE_PIECES_BAR_POINT_INDEX, To: 20, Type: CHECKER_ON_BAR_MOVE}, Move{From: 23, To: 20, Type: NORMAL_MOVE}},
+		{Move{From: WHITE_PIECES_BAR_POINT_INDEX, To: 21, Type: CHECKER_ON_BAR_MOVE}, Move{From: 5, To: 1, Type: NORMAL_MOVE}},
+		{Move{From: WHITE_PIECES_BAR_POINT_INDEX, To: 21, Type: CHECKER_ON_BAR_MOVE}, Move{From: 7, To: 3, Type: NORMAL_MOVE}},
+		{Move{From: WHITE_PIECES_BAR_POINT_INDEX, To: 21, Type: CHECKER_ON_BAR_MOVE}, Move{From: 12, To: 8, Type: NORMAL_MOVE}},
+		{Move{From: WHITE_PIECES_BAR_POINT_INDEX, To: 21, Type: CHECKER_ON_BAR_MOVE}, Move{From: 21, To: 17, Type: NORMAL_MOVE}},
 	}
 
-	fmt.Println(len(expectedMoveRolls6))
+	// test 8 - test checkers on move bar
+	// - from white's perspective
+	// - die roll is 4-3 [MAKE SURE 3-4 and 4-3 yields the same moves]
+	board7 := NewBoard(COLOR_BLACK)
+	board7.Points[5].CheckerCount = 2
+	board7.Points[4].CheckerCount = 2
+	board7.Points[4].Checker.Color = COLOR_WHITE
+	board7.Points[1].CheckerCount = 2
+	board7.Points[1].Checker.Color = COLOR_WHITE
+	board7.Points[2].CheckerCount = 1
+	board7.Points[2].Checker.Color = COLOR_WHITE
+	board7.Points[7].CheckerCount = 1
+	board7.Points[BLACK_PIECES_BAR_POINT_INDEX].CheckerCount = 1
+	board7.Points[12].CheckerCount -= 1
+
+	dieRoll7 := DieRoll{3, 4}
+	expectedMoveRolls7 := []MoveRoll{
+		{Move{From: BLACK_PIECES_BAR_POINT_INDEX, To: 3, Type: CHECKER_ON_BAR_MOVE}, Move{From: 18, To: 21, Type: NORMAL_MOVE}},
+		{Move{From: BLACK_PIECES_BAR_POINT_INDEX, To: 3, Type: CHECKER_ON_BAR_MOVE}, Move{From: 16, To: 19, Type: NORMAL_MOVE}},
+		{Move{From: BLACK_PIECES_BAR_POINT_INDEX, To: 3, Type: CHECKER_ON_BAR_MOVE}, Move{From: 11, To: 14, Type: NORMAL_MOVE}},
+		{Move{From: BLACK_PIECES_BAR_POINT_INDEX, To: 3, Type: CHECKER_ON_BAR_MOVE}, Move{From: 3, To: 6, Type: NORMAL_MOVE}},
+		{Move{From: BLACK_PIECES_BAR_POINT_INDEX, To: 3, Type: CHECKER_ON_BAR_MOVE}, Move{From: 0, To: 3, Type: NORMAL_MOVE}},
+		{Move{From: BLACK_PIECES_BAR_POINT_INDEX, To: 2, Type: CHECKER_ON_BAR_MOVE}, Move{From: 18, To: 22, Type: NORMAL_MOVE}},
+		{Move{From: BLACK_PIECES_BAR_POINT_INDEX, To: 2, Type: CHECKER_ON_BAR_MOVE}, Move{From: 16, To: 20, Type: NORMAL_MOVE}},
+		{Move{From: BLACK_PIECES_BAR_POINT_INDEX, To: 2, Type: CHECKER_ON_BAR_MOVE}, Move{From: 11, To: 15, Type: NORMAL_MOVE}},
+		{Move{From: BLACK_PIECES_BAR_POINT_INDEX, To: 2, Type: CHECKER_ON_BAR_MOVE}, Move{From: 2, To: 6, Type: NORMAL_MOVE}},
+	}
+
+	// test 9 - test that, when there are only one
+	// die moves, the bigger move is selected
+	// dice roll is 1-2
+	board8 := NewBoard(COLOR_BLACK)
+	board8.Points[11].CheckerCount = 0
+	board8.Points[16].CheckerCount = 0
+	board8.Points[19].CheckerCount = 2
+	board8.Points[19].Checker.Color = COLOR_WHITE
+	board8.Points[20].CheckerCount = 2
+	board8.Points[20].Checker.Color = COLOR_WHITE
+	board8.Points[0].CheckerCount = 1
+	board8.Points[3].CheckerCount = 2
+	board8.Points[3].Checker.Color = COLOR_WHITE
+	dieRoll8 := DieRoll{1, 2}
+	expectedMoveRolls8 := []MoveRoll{
+		{Move{From: 0, To: 2, Type: NORMAL_MOVE}},
+	}
+
+	// test 10 - test that, when there are only one
+	// die moves, the bigger move is selected
+	// dice roll is 1-2
+	board9 := NewBoard(COLOR_BLACK)
+	board9.Points[11].CheckerCount = 0
+	board9.Points[16].CheckerCount = 0
+	board9.Points[19].CheckerCount = 2
+	board9.Points[19].Checker.Color = COLOR_WHITE
+	board9.Points[20].CheckerCount = 2
+	board9.Points[20].Checker.Color = COLOR_WHITE
+	board9.Points[0].CheckerCount = 1
+	board9.Points[3].CheckerCount = 2
+	board9.Points[3].Checker.Color = COLOR_WHITE
+	dieRoll9 := DieRoll{4, 4}
+	expectedMoveRolls9 := []MoveRoll{
+		{Move{From: 0, To: 4, Type: NORMAL_MOVE}, Move{From: 4, To: 8, Type: NORMAL_MOVE}, Move{From: 18, To: 22, Type: NORMAL_MOVE}, Move{From: 18, To: 22, Type: NORMAL_MOVE}},
+		{Move{From: 0, To: 4, Type: NORMAL_MOVE}, Move{From: 18, To: 22, Type: NORMAL_MOVE}, Move{From: 18, To: 22, Type: NORMAL_MOVE}, Move{From: 18, To: 22, Type: NORMAL_MOVE}},
+		{Move{From: 18, To: 22, Type: NORMAL_MOVE}, Move{From: 18, To: 22, Type: NORMAL_MOVE}, Move{From: 18, To: 22, Type: NORMAL_MOVE}, Move{From: 18, To: 22, Type: NORMAL_MOVE}},
+	}
+
+	// test 11 - test that - in doubles
+	// if there are no 4 possible moves, 3 dice moves are selected
+	board10 := NewBoard(COLOR_BLACK)
+	board10.Points[11].CheckerCount = 0
+	board10.Points[16].CheckerCount = 0
+	board10.Points[19].CheckerCount = 2
+	board10.Points[19].Checker.Color = COLOR_WHITE
+	board10.Points[20].CheckerCount = 2
+	board10.Points[20].Checker.Color = COLOR_WHITE
+	board10.Points[0].CheckerCount = 1
+	board10.Points[3].CheckerCount = 2
+	board10.Points[3].Checker.Color = COLOR_WHITE
+	board10.Points[18].CheckerCount = 3
+	dieRoll10 := DieRoll{3, 3}
+	expectedMoveRolls10 := []MoveRoll{
+		{Move{From: 18, To: 21, Type: NORMAL_MOVE}, Move{From: 18, To: 21, Type: NORMAL_MOVE}, Move{From: 18, To: 21, Type: NORMAL_MOVE}},
+	}
+
+	// test 12 - test that - in doubles
+	// if there are no 4 possible moves and 3 dice, 2 dice moves are selected
+	board11 := board10.CopyBoard()
+	board11.Points[18].CheckerCount = 2
+	dieRoll11 := DieRoll{3, 3}
+	expectedMoveRolls11 := []MoveRoll{
+		{Move{From: 18, To: 21, Type: NORMAL_MOVE}, Move{From: 18, To: 21, Type: NORMAL_MOVE}},
+	}
+
+	// test 13 - test that - in doubles
+	// if there are no 4 possible moves, 3 dice and 2 dice moves, 1 dice moves are selected
+	board12 := board10.CopyBoard()
+	board12.Points[18].CheckerCount = 1
+	dieRoll12 := DieRoll{3, 3}
+	expectedMoveRolls12 := []MoveRoll{
+		{Move{From: 18, To: 21, Type: NORMAL_MOVE}},
+	}
 
 	return []validMovesFromDieTest{
 		{
@@ -219,6 +316,41 @@ func makeGetValidMovesFroMDieTests() []validMovesFromDieTest {
 			board5,
 			dieRoll5,
 			expectedMoveRolls5,
+		},
+		{
+			board6,
+			dieRoll6,
+			expectedMoveRolls6,
+		},
+		{
+			board7,
+			dieRoll7,
+			expectedMoveRolls7,
+		},
+		{
+			board8,
+			dieRoll8,
+			expectedMoveRolls8,
+		},
+		{
+			board9,
+			dieRoll9,
+			expectedMoveRolls9,
+		},
+		{
+			board10,
+			dieRoll10,
+			expectedMoveRolls10,
+		},
+		{
+			board11,
+			dieRoll11,
+			expectedMoveRolls11,
+		},
+		{
+			board12,
+			dieRoll12,
+			expectedMoveRolls12,
 		},
 	}
 }
