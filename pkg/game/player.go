@@ -1,8 +1,8 @@
 package game
 
 import (
-	"github.com/GeorgianBadita/backgammon/pkg/ai"
-	"github.com/GeorgianBadita/backgammon/pkg/board"
+	"github.com/GeorgianBadita/backgammon-move-generator/pkg/ai"
+	"github.com/GeorgianBadita/backgammon-move-generator/pkg/board"
 )
 
 type IPlayer interface {

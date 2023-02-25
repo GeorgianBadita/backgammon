@@ -1,4 +1,4 @@
-module github.com/GeorgianBadita/backgammon
+module github.com/GeorgianBadita/backgammon-move-generator
 
 go 1.19
 

@@ -3,7 +3,7 @@ package game
 import (
 	"math/rand"
 
-	"github.com/GeorgianBadita/backgammon/pkg/board"
+	"github.com/GeorgianBadita/backgammon-move-generator/pkg/board"
 )
 
 type BackgammonGame struct {

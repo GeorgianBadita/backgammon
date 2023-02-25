@@ -6,7 +6,7 @@ import (
 	"os"
 	"runtime/pprof"
 
-	"github.com/GeorgianBadita/backgammon/pkg/board"
+	"github.com/GeorgianBadita/backgammon-move-generator/pkg/board"
 )
 
 func main() {
