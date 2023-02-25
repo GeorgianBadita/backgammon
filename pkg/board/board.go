@@ -135,12 +135,18 @@ func (b Board) ComputeGameState() GameState {
 
 func (b Board) GetValidMovesForDie(d DieRoll) []MoveRoll {
 	if d.Die1 < d.Die2 {
-		moveRolls := getPossibleMoves(b, DieRoll{d.Die2, d.Die1})
-		if len(moveRolls) > 0 {
-			return moveRolls
-		}
+		d.Die1, d.Die2 = d.Die2, d.Die1
 	}
-	return getPossibleMoves(b, DieRoll{d.Die1, d.Die2})
+	// In bearing off, we need to check the smaller dice roll first
+	// to make sure we capture all cases
+	if b.ComputeGameState() == BEARING_OFF {
+		d.Die1, d.Die2 = d.Die2, d.Die1
+	}
+	moveRolls := getPossibleMoves(b, d)
+	if len(moveRolls) > 0 {
+		return moveRolls
+	}
+	return getPossibleMoves(b, DieRoll{d.Die2, d.Die1})
 }
 
 // Function that prints a pretty string of the current board
@@ -247,18 +253,12 @@ func getPossibleMoves(b Board, d DieRoll) []MoveRoll {
 	d1Moves := getMovesWithOneDie(b, d.Die1)
 	moveRolls := []MoveRoll{}
 	if d.Die1 != d.Die2 {
-		if d.Die1 < d.Die2 {
-			// Make sure we first make moves with the bigger die
-			d.Die1, d.Die2 = d.Die2, d.Die1
-		}
-
 		for idx := 0; idx < len(d1Moves); idx++ {
 			currMove := d1Moves[idx]
 			d2Moves := getMovesWithOneDie(currMove.MakeMove(b), d.Die2)
 			for jdx := 0; jdx < len(d2Moves); jdx++ {
 				moveRolls = append(moveRolls, MoveRoll{currMove, d2Moves[jdx]})
 			}
-
 		}
 		// If thereare no possible moves with 2 die, take only possible moves with 1 dice
 		if len(moveRolls) == 0 {
@@ -308,17 +308,16 @@ func getPossibleMoves(b Board, d DieRoll) []MoveRoll {
 }
 
 func getMovesWithOneDie(b Board, dValue int) []Move {
-	res := []Move{}
-	fmt.Print(b.ComputeGameState())
 	switch b.ComputeGameState() {
 	case NORMAL_PLAY:
-		res = getMovesForNormalGameState(b, dValue)
+		return getMovesForNormalGameState(b, dValue)
 	case CHECKERS_ON_BAR:
-		res = getMovesForCheckersOnBarState(b, dValue)
+		return getMovesForCheckersOnBarState(b, dValue)
 	case BEARING_OFF:
-		res = getMovesForBearingOffState(b, dValue)
+		return getMovesForBearingOffState(b, dValue)
+	default:
+		return []Move{}
 	}
-	return res
 }
 
 // Get all the moves for one die on a normal game state
@@ -402,29 +401,29 @@ func getMovesForBearingOffState(b Board, dValue int) []Move {
 			}
 		}
 		if dValue >= indexOfLastChecker+1 {
-			movesMap[Move{PointIndex(indexOfLastChecker), -1, BEARING_OFF_MOVE}] = true
+			movesMap[Move{PointIndex(indexOfLastChecker), TO_INDEX_FOR_BEARING_OFF, BEARING_OFF_MOVE}] = true
 		}
 		// Base case when player has checkers on the die position
 		// This can lead to duplicate moves, thus using a map
 		if b.Points[dValue-1].CheckerCount > 0 && b.Points[dValue-1].Checker.Color == b.ColorToMove {
-			movesMap[Move{PointIndex(dValue - 1), -1, BEARING_OFF_MOVE}] = true
+			movesMap[Move{PointIndex(dValue - 1), TO_INDEX_FOR_BEARING_OFF, BEARING_OFF_MOVE}] = true
 		}
 	} else {
 		indexOfLastChecker := 18
-		for idx := 18; idx < NUM_PLAYABLE_POINTS; idx-- {
+		for idx := 18; idx < NUM_PLAYABLE_POINTS; idx++ {
 			if b.Points[idx].CheckerCount > 0 && b.Points[idx].Checker.Color == b.ColorToMove {
 				indexOfLastChecker = idx
 				break
 			}
 		}
 		if dValue >= NUM_PLAYABLE_POINTS-indexOfLastChecker {
-			movesMap[Move{PointIndex(indexOfLastChecker), -1, BEARING_OFF_MOVE}] = true
+			movesMap[Move{PointIndex(indexOfLastChecker), TO_INDEX_FOR_BEARING_OFF, BEARING_OFF_MOVE}] = true
 		}
 
 		// Base case when player has checkers on the die position
 		// This can lead to duplicate moves, thus using a map
 		if b.Points[NUM_PLAYABLE_POINTS-dValue].CheckerCount > 0 && b.Points[NUM_PLAYABLE_POINTS-dValue].Checker.Color == b.ColorToMove {
-			movesMap[Move{PointIndex(NUM_PLAYABLE_POINTS - dValue), -1, BEARING_OFF_MOVE}] = true
+			movesMap[Move{PointIndex(NUM_PLAYABLE_POINTS - dValue), TO_INDEX_FOR_BEARING_OFF, BEARING_OFF_MOVE}] = true
 		}
 	}
 
