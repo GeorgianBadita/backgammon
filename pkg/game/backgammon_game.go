@@ -6,17 +6,20 @@ import (
 
 // Function that applies a move to a serialized board string
 func MakeMoveOnSerializedBoard(boardString string, mv board.Move) string {
-	board := board.DeserializeBoard(boardString)
-	return mv.MakeMove(board).SerializeBoard()
+	b := board.DeserializeBoard(boardString)
+	newBoard := mv.MakeMove(b)
+	newBoard.ColorToMove = board.Color(1 - b.ColorToMove)
+	return newBoard.SerializeBoard()
 }
 
 // Function that applies a move roll to a serialized board string
 func MakeMoveRollOnSerializedBoard(boardString string, mvRoll board.MoveRoll) string {
-	board := board.DeserializeBoard(boardString)
+	b := board.DeserializeBoard(boardString)
 	for idx := 0; idx < len(mvRoll); idx++ {
-		board = mvRoll[idx].MakeMove(board)
+		b = mvRoll[idx].MakeMove(b)
 	}
-	return board.SerializeBoard()
+	b.ColorToMove = board.Color(1 - b.ColorToMove)
+	return b.SerializeBoard()
 }
 
 // Function that gets valid moves for a serialized board and die roll
