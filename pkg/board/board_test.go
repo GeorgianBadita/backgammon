@@ -49,6 +49,20 @@ func TestGetValidMovesFromDie(t *testing.T) {
 	}
 }
 
+func TestSerializeDeserializeBoard(t *testing.T) {
+	// ARRANGE
+	startGameString := "6-5/8-3/13-5/24-2:1-2/12-5/17-3/19-5 0 0 w"
+	board := NewBoard(COLOR_WHITE)
+
+	// ACT
+	deserializedBoard := DeserializeBoard(startGameString)
+
+	// ARRANGE
+	if !board.IsEqual(deserializedBoard) {
+		t.Errorf("Output %v not equal to expected %v", deserializedBoard, board)
+	}
+}
+
 func makeGetValidMovesFroMDieTests() []validMovesFromDieTest {
 	// test 1 - tests all valid moves from start position
 	// - from white's perspective

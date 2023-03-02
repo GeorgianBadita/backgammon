@@ -1,53 +1,26 @@
 package game
 
 import (
-	"math/rand"
-
 	"github.com/GeorgianBadita/backgammon-move-generator/pkg/board"
 )
 
-type BackgammonGame struct {
-	board             board.Board
-	player1           IPlayer
-	player2           IPlayer
-	playerToMoveColor board.Color
+// Function that applies a move to a serialized board string
+func MakeMoveOnSerializedBoard(boardString string, mv board.Move) string {
+	board := board.DeserializeBoard(boardString)
+	return mv.MakeMove(board).SerializeBoard()
 }
 
-func NewBackgammonGame(startingPlayerColor board.Color, pl1 IPlayer, pl2 IPlayer) BackgammonGame {
-	if pl1.GetColor() == pl2.GetColor() {
-		panic("Both players cannot have the same color")
+// Function that applies a move roll to a serialized board string
+func MakeMoveRollOnSerializedBoard(boardString string, mvRoll board.MoveRoll) string {
+	board := board.DeserializeBoard(boardString)
+	for idx := 0; idx < len(mvRoll); idx++ {
+		board = mvRoll[idx].MakeMove(board)
 	}
-	board := board.NewBoard(startingPlayerColor)
-	return BackgammonGame{board, pl1, pl2, startingPlayerColor}
+	return board.SerializeBoard()
 }
 
-func (bg BackgammonGame) MakeMoveForPlayer(mv board.MoveRoll, playerColor board.Color) BackgammonGame {
-	if playerColor != bg.playerToMoveColor {
-		panic("Move must be made by the player to move")
-	}
-	// Apply move
-	newBoard := mv.MakeMoveRoll(bg.board)
-	// Set the new color to move for board
-	newBoard.ColorToMove = board.Color(1 - bg.playerToMoveColor)
-	// Set the board to the new board
-	bg.board = newBoard
-	// Change current player to move
-	bg.playerToMoveColor = board.Color(1 - bg.playerToMoveColor)
-	return bg
-}
-
-func (bg BackgammonGame) IsGameOver() bool {
-	return bg.board.ComputeGameState() == board.GAME_OVER
-}
-
-func (bg BackgammonGame) GetPossibleMoves(d board.DieRoll) []board.MoveRoll {
-	return bg.board.GetValidMovesForDie(d)
-}
-
-func (bg BackgammonGame) GetDieRoll() board.DieRoll {
-	return board.DieRoll{Die1: rand.Intn(6) + 1, Die2: rand.Intn(6) + 1}
-}
-
-func (bg BackgammonGame) GetPlayerToMove() board.Color {
-	return bg.playerToMoveColor
+// Function that gets valid moves for a serialized board and die roll
+func GetMovesForSerializedBoard(boardString string, dieRoll board.DieRoll) []board.MoveRoll {
+	board := board.DeserializeBoard(boardString)
+	return board.GetValidMovesForDie(dieRoll)
 }

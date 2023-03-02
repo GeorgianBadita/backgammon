@@ -3,6 +3,7 @@ package board
 import (
 	"fmt"
 	"strconv"
+	"strings"
 
 	"github.com/mitchellh/hashstructure/v2"
 )
@@ -142,6 +143,95 @@ func (b Board) ComputeGameState() GameState {
 
 func (b Board) GetValidMovesForDie(d DieRoll) []MoveRoll {
 	return getPossibleMoves(b, d)
+}
+
+/**
+ * Function to serialize a board to a string representation
+ * serialized string has a form of:
+ * 1-3/2-4/3-1:5-1/6-2/11-3 1 0 w
+ * meaning: up until : are white's pieces, after are black pieces
+ * each group of x-y means there are y checkers at xth point
+ * after that the first number is the number of barred checkers for white
+ * the other number is the number of barred checkers for black
+ * the last number is the current player turn
+ */
+func (b Board) SerializeBoard() string {
+	whiteString := ""
+	blackString := ""
+	for idx := 0; idx < NUM_PLAYABLE_POINTS; idx++ {
+		if b.Points[idx].CheckerCount > 0 {
+			fmtString := fmt.Sprintf("%d-%d/", idx+1, b.Points[idx].CheckerCount)
+			if b.Points[idx].Checker.Color == COLOR_WHITE {
+				whiteString += fmtString
+			} else {
+				blackString += fmtString
+			}
+		}
+	}
+	if len(whiteString) > 0 {
+		whiteString = whiteString[:len(whiteString)-1]
+	}
+
+	if len(blackString) > 0 {
+		blackString = blackString[:len(blackString)-1]
+	}
+	colorToMove := "w"
+	if b.ColorToMove == COLOR_BLACK {
+		colorToMove = "b"
+	}
+	return fmt.Sprintf("%s:%s %d %d %s", whiteString, blackString, b.Points[WHITE_PIECES_BAR_POINT_INDEX].CheckerCount, b.Points[BLACK_PIECES_BAR_POINT_INDEX].CheckerCount, colorToMove)
+}
+
+/**
+* Function to deserialize a string board to a Board struct
+* @param boardStr - serialized string of a backgammon board
+* serialized string has a form of:
+* 1-3/2-4/3-1:5-1/6-2/11-3 1 0 w
+* meaning: up until : are white's pieces, after are black pieces
+* each group of x-y means there are y checkers at xth point
+* after that the first number is the number of barred checkers for white
+* the other number is the number of barred checkers for black
+* the last number is the current player turn
+ */
+func DeserializeBoard(boardStr string) Board {
+	splitString := strings.Split(boardStr, ":")
+	whiteStr := splitString[0]
+	restSplit := strings.Split(splitString[1], " ")
+	blackStr := restSplit[0]
+	barredWhite := restSplit[1]
+	barrdeBlack := restSplit[2]
+	turn := restSplit[3]
+
+	board := NewBoard(COLOR_BLACK)
+	if turn == "w" {
+		board.ColorToMove = COLOR_WHITE
+	}
+
+	for idx := 0; idx < NUM_PLAYABLE_POINTS; idx++ {
+		board.Points[idx].CheckerCount = 0
+	}
+
+	for _, split := range strings.Split(whiteStr, "/") {
+		pointSplit := strings.Split(split, "-")
+		pointIdx, _ := strconv.Atoi(pointSplit[0])
+		numCheckers, _ := strconv.Atoi(pointSplit[1])
+		board.Points[pointIdx-1].CheckerCount = numCheckers
+		board.Points[pointIdx-1].Checker.Color = COLOR_WHITE
+	}
+
+	for _, split := range strings.Split(blackStr, "/") {
+		pointSplit := strings.Split(split, "-")
+		pointIdx, _ := strconv.Atoi(pointSplit[0])
+		numCheckers, _ := strconv.Atoi(pointSplit[1])
+		board.Points[pointIdx-1].CheckerCount = numCheckers
+		board.Points[pointIdx-1].Checker.Color = COLOR_BLACK
+	}
+	numCheckers, _ := strconv.Atoi(barredWhite)
+	board.Points[WHITE_PIECES_BAR_POINT_INDEX].CheckerCount = numCheckers
+
+	numCheckers, _ = strconv.Atoi(barrdeBlack)
+	board.Points[BLACK_PIECES_BAR_POINT_INDEX].CheckerCount = numCheckers
+	return board
 }
 
 // Function that prints a pretty string of the current board
