@@ -43,7 +43,7 @@ func TestIsEqual(t *testing.T) {
 
 func TestGetValidMovesFromDie(t *testing.T) {
 	for _, test := range makeGetValidMovesFroMDieTests() {
-		if output := test.board.GetValidMovesForDie(test.die); !areMoveRollListsEqual(test.expectedMoveRolls, output) {
+		if output := test.board.GetValidMovesForDieRoll(test.die); !areMoveRollListsEqual(test.expectedMoveRolls, output) {
 			t.Errorf("Output %v not equal to expected %v", output, test.expectedMoveRolls)
 		}
 	}

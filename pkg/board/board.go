@@ -141,8 +141,12 @@ func (b Board) ComputeGameState() GameState {
 	return NORMAL_PLAY
 }
 
-func (b Board) GetValidMovesForDie(d DieRoll) []MoveRoll {
+func (b Board) GetValidMovesForDieRoll(d DieRoll) []MoveRoll {
 	return getPossibleMoves(b, d)
+}
+
+func (b Board) GetValidMovesForDie(d int) []Move {
+	return getMovesWithOneDie(b, d)
 }
 
 /**

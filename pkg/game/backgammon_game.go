@@ -22,8 +22,13 @@ func MakeMoveRollOnSerializedBoard(boardString string, mvRoll board.MoveRoll) st
 	return b.SerializeBoard()
 }
 
-// Function that gets valid moves for a serialized board and die roll
-func GetMovesForSerializedBoard(boardString string, dieRoll board.DieRoll) []board.MoveRoll {
+// Function that gets valid move rolls for a serialized board and die roll
+func GetMoveRollsForSerializedBoard(boardString string, dieRoll board.DieRoll) []board.MoveRoll {
 	board := board.DeserializeBoard(boardString)
-	return board.GetValidMovesForDie(dieRoll)
+	return board.GetValidMovesForDieRoll(dieRoll)
+}
+
+// Function that gets valid moves for a serialized board and one die
+func GetMovesForSerializedBoard(boardString string, dValue int) []board.Move {
+	return board.DeserializeBoard(boardString).GetValidMovesForDie(dValue)
 }

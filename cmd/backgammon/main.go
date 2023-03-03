@@ -18,11 +18,11 @@ func main() {
 	defer pprof.StopCPUProfile()
 	backgammonBoard := board.NewBoard(board.COLOR_WHITE)
 	fmt.Println(backgammonBoard)
-	moveRolls := backgammonBoard.GetValidMovesForDie(board.DieRoll{Die1: 6, Die2: 6})
+	moveRolls := backgammonBoard.GetValidMovesForDieRoll(board.DieRoll{Die1: 6, Die2: 6})
 
 	newBoard := moveRolls[0].MakeMoveRoll(backgammonBoard)
 	newBoard.ColorToMove = board.COLOR_BLACK
-	newMoves := newBoard.GetValidMovesForDie(board.DieRoll{Die1: 6, Die2: 1})
+	newMoves := newBoard.GetValidMovesForDieRoll(board.DieRoll{Die1: 6, Die2: 1})
 
 	for idx := 0; idx < len(newMoves); idx++ {
 		moveRoll := newMoves[idx]
