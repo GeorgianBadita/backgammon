@@ -5,10 +5,12 @@ import (
 )
 
 // Function that applies a move to a serialized board string
-func MakeMoveOnSerializedBoard(boardString string, mv board.Move) string {
+func MakeMoveOnSerializedBoard(boardString string, mv board.Move, endOfTurn bool) string {
 	b := board.DeserializeBoard(boardString)
 	newBoard := mv.MakeMove(b)
-	newBoard.ColorToMove = board.Color(1 - b.ColorToMove)
+	if endOfTurn {
+		newBoard.ColorToMove = board.Color(1 - b.ColorToMove)
+	}
 	return newBoard.SerializeBoard()
 }
 
