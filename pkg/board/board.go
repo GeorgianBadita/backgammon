@@ -141,6 +141,17 @@ func (b Board) ComputeGameState() GameState {
 	return NORMAL_PLAY
 }
 
+func (b Board) GetAllPossibleMoveRolls() []MoveRoll {
+	mvRolls := []MoveRoll{}
+	for idx := 1; idx <= 6; idx++ {
+		for jdx := 1; jdx <= 6; jdx++ {
+			moves := b.GetValidMovesForDieRoll(DieRoll{idx, jdx})
+			mvRolls = append(mvRolls, moves...)
+		}
+	}
+	return mvRolls
+}
+
 func (b Board) GetValidMovesForDieRoll(d DieRoll) []MoveRoll {
 	return getPossibleMoves(b, d)
 }
